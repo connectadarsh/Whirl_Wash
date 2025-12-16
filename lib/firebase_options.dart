@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'whirl-wash.firebasestorage.app',
     measurementId: 'G-WRWC1FQ3L5',
   );
+
 }
