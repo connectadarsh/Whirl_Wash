@@ -1,83 +1,149 @@
+// import 'package:flutter/material.dart';
+
+// class SplashScreen extends StatelessWidget {
+//   const SplashScreen({Key? key}) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       body: Stack(
+//         children: [
+//           // Background gradient (matching auth screens)
+//           Positioned.fill(
+//             child: Container(
+//               decoration: BoxDecoration(
+//                 gradient: LinearGradient(
+//                   begin: Alignment.topLeft,
+//                   end: Alignment.bottomRight,
+//                   colors: [
+//                     const Color(0xFF2C5F7C).withValues(alpha: 0.5),
+//                     Colors.black,
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ),
+
+//           // Dark overlay (matching auth screens)
+//           Positioned.fill(
+//             child: Container(
+//               decoration: BoxDecoration(
+//                 gradient: LinearGradient(
+//                   begin: Alignment.topCenter,
+//                   end: Alignment.bottomCenter,
+//                   colors: [
+//                     Colors.black.withValues(alpha: 0.72),
+//                     Colors.black.withValues(alpha: 0.82),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ),
+
+//           // Logo in center - LARGER SIZE
+//           Center(
+//             child: Image.asset(
+//               'assets/images/logo.png',
+//               width:
+//                   MediaQuery.of(context).size.width *
+//                   0.90, // 85% of screen width
+//               height: 250, // Increased height
+//               fit: BoxFit.contain,
+//               errorBuilder: (context, error, stackTrace) {
+//                 // Fallback if image not found
+//                 return const Text(
+//                   'WhirlWash',
+//                   style: TextStyle(
+//                     fontSize: 64,
+//                     fontWeight: FontWeight.bold,
+//                     color: Color(0xFF4ECDC4),
+//                     letterSpacing: 2,
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// ----------------------------------------------------------------------------------------
 import 'package:flutter/material.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0D1B1E), Color(0xFF1A2B2E)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 1500),
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.scale(
-                  scale: 0.5 + (value * 0.5),
-                  child: child,
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          // Background gradient (matching auth screens)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.5),
+                    AppColors.background,
+                  ],
                 ),
-              );
-            },
+              ),
+            ),
+          ),
+
+          // Dark overlay (matching auth screens)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(gradient: AppColors.overlayGradient),
+            ),
+          ),
+
+          // Logo in center
+          Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo Icon
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF4ECDC4).withOpacity(0.3),
-                        const Color(0xFF4ECDC4).withOpacity(0.1),
-                      ],
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.local_laundry_service,
-                    size: 60,
-                    color: Color(0xFF4ECDC4),
-                  ),
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: MediaQuery.of(context).size.width * 0.90,
+                  height: 250,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Text(
+                      'WhirlWash',
+                      style: TextStyle(
+                        fontSize: 64,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                        letterSpacing: 2,
+                      ),
+                    );
+                  },
                 ),
-
-                const SizedBox(height: 30),
-
-                // App Name
-                const Text(
-                  'WhirlWash',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Tagline
-                Text(
-                  'Your Laundry, Our Priority',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.6),
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                const SizedBox(height: 24),
+                // Loading indicator (commented out)
+                // const SizedBox(
+                //   width: 40,
+                //   height: 40,
+                //   child: CircularProgressIndicator(
+                //     valueColor: AlwaysStoppedAnimation<Color>(
+                //       AppColors.secondary,
+                //     ),
+                //     strokeWidth: 3,
+                //   ),
+                // ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

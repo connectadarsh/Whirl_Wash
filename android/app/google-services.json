@@ -12,7 +12,20 @@
           "package_name": "com.example.whirl_wash"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "714008099387-g807n10r6e73gu4m9osdoonkdh8ottd8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.whirl_wash",
+            "certificate_hash": "02d1ddca9d0d46efb4289a70e9ccae1505a93486"
+          }
+        },
+        {
+          "client_id": "714008099387-2898j1n68f9ems080vp0obruegld7g7q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBqalcLCdVaRti1T3412H6nwkqTso-xpVw"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "714008099387-2898j1n68f9ems080vp0obruegld7g7q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "714008099387-1vest1cfurfmbq2nmi7eucnepncevm38.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.whirlWash"
+              }
+            }
+          ]
         }
       }
     }

@@ -44,6 +44,9 @@ dependencies:
 
   flutter_riverpod: ^3.0.3
   google_sign_in: ^7.2.0
+  image_picker: ^1.2.1
+  animated_bottom_navigation_bar: ^1.4.0
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
