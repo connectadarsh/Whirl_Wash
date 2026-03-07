@@ -54,17 +54,17 @@ class UserModel {
   }
 
   // Create from Map (needed for provider)
-  factory UserModel.fromMap(Map<String, dynamic> data) {
-    return UserModel(
-      id: data['id'] ?? '',
-      name: data['name'],
-      email: data['email'],
-      phone: data['phone'],
-      photoUrl: data['photoUrl'],
-      authProvider: data['authProvider'] ?? 'email',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
+  // factory UserModel.fromMap(Map<String, dynamic> data) {
+  //   return UserModel(
+  //     id: data['id'] ?? '',
+  //     name: data['name'],
+  //     email: data['email'],
+  //     phone: data['phone'],
+  //     photoUrl: data['photoUrl'],
+  //     authProvider: data['authProvider'] ?? 'email',
+  //     createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+  //   );
+  // }
 
   // Convert to Firestore document
   Map<String, dynamic> toFirestore() {
@@ -79,17 +79,17 @@ class UserModel {
   }
 
   // Convert to Map (useful for debugging and state management)
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'photoUrl': photoUrl,
-      'authProvider': authProvider,
-      'createdAt': Timestamp.fromDate(createdAt),
-    };
-  }
+  // Map<String, dynamic> toMap() {
+  //   return {
+  //     'id': id,
+  //     'name': name,
+  //     'email': email,
+  //     'phone': phone,
+  //     'photoUrl': photoUrl,
+  //     'authProvider': authProvider,
+  //     'createdAt': Timestamp.fromDate(createdAt),
+  //   };
+  // }
 
   // Copy with method for updates
   UserModel copyWith({

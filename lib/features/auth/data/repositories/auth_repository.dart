@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -50,17 +50,21 @@ class AuthRepository {
         password: password,
       );
 
-      // Update display name
       await userCredential.user?.updateDisplayName(name);
 
-      // Save user data to Firestore
       if (userCredential.user != null) {
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'name': name,
-          'email': email,
-          'authProvider': 'email',
+        final user = userCredential.user!;
+
+        final userModel = UserModel.fromFirebaseUser(
+          uid: user.uid,
+          displayName: name,
+          email: email,
+          provider: 'email',
+        );
+
+        await _firestore.collection('users').doc(user.uid).set({
+          ...userModel.toFirestore(),
           'profileComplete': false,
-          'createdAt': FieldValue.serverTimestamp(),
         });
       }
 
@@ -76,9 +80,7 @@ class AuthRepository {
       final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
           .authenticate();
 
-      if (googleUser == null) {
-        return null;
-      }
+      if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -91,39 +93,32 @@ class AuthRepository {
 
       if (userCredential.user != null) {
         final user = userCredential.user!;
+
+        final userModel = UserModel.fromFirebaseUser(
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          provider: 'google',
+        );
+
         final userDoc = await _firestore
             .collection('users')
             .doc(user.uid)
             .get();
 
         if (userDoc.exists) {
-          // ✅ EXISTING USER - Always ensure profileComplete is true
-
-          // Use merge to update/add profileComplete field
           await _firestore.collection('users').doc(user.uid).set({
-            'name': user.displayName ?? '',
-            'email': user.email ?? '',
-            'photoUrl': user.photoURL ?? '',
-            'authProvider': 'google',
-            'profileComplete': true, // ← Always set to true for Google
+            ...userModel.toFirestore(),
+            'profileComplete': true,
             'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true)); // ← merge: true preserves other fields
-
-          // await Future.delayed(const Duration(milliseconds: 500));
+          }, SetOptions(merge: true));
         } else {
-          // ✅ NEW USER - Create with profileComplete = true
-
           await _firestore.collection('users').doc(user.uid).set({
-            'name': user.displayName ?? '',
-            'email': user.email ?? '',
-            'photoUrl': user.photoURL ?? '',
-            'authProvider': 'google',
-            'profileComplete': true, // ← Google provides all needed info
-            'createdAt': FieldValue.serverTimestamp(),
+            ...userModel.toFirestore(),
+            'profileComplete': true,
             'updatedAt': FieldValue.serverTimestamp(),
           });
-
-          // await Future.delayed(const Duration(milliseconds: 500));
         }
       }
 
@@ -183,34 +178,36 @@ class AuthRepository {
             .get();
 
         if (userDoc.exists) {
-          final userData = userDoc.data();
+          final existingUser = UserModel.fromFirestore(userDoc);
 
           final hasPhone =
-              userData?['phone'] != null &&
-              userData!['phone'].toString().isNotEmpty;
+              existingUser.phone != null && existingUser.phone!.isNotEmpty;
           final hasName =
-              userData?['name'] != null &&
-              userData!['name'].toString().isNotEmpty;
-          final hasGender =
-              userData?['gender'] != null &&
-              userData!['gender'].toString().isNotEmpty;
+              existingUser.name != null && existingUser.name!.isNotEmpty;
 
-          if (hasPhone &&
-              hasName &&
-              hasGender &&
-              userData?['profileComplete'] != true) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          final hasGender =
+              userData['gender'] != null &&
+              userData['gender'].toString().isNotEmpty;
+          final alreadyComplete = userData['profileComplete'] == true;
+
+          if (hasPhone && hasName && hasGender && !alreadyComplete) {
             await _firestore.collection('users').doc(user.uid).update({
               'profileComplete': true,
               'updatedAt': FieldValue.serverTimestamp(),
             });
           }
         } else {
+          final userModel = UserModel.fromFirebaseUser(
+            uid: user.uid,
+            displayName: name ?? user.displayName,
+            phoneNumber: user.phoneNumber,
+            provider: 'phone',
+          );
+
           await _firestore.collection('users').doc(user.uid).set({
-            'name': name ?? user.displayName ?? '',
-            'phone': user.phoneNumber ?? '',
-            'authProvider': 'phone',
+            ...userModel.toFirestore(),
             'profileComplete': false,
-            'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           });
         }
@@ -221,6 +218,16 @@ class AuthRepository {
       throw _handleAuthException(e);
     } catch (e) {
       throw 'An unexpected error occurred during OTP verification';
+    }
+  }
+
+  // ============ FORGOT PASSWORD ============
+
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     }
   }
 
@@ -240,7 +247,7 @@ class AuthRepository {
       final doc = await _firestore.collection('users').doc(uid).get();
 
       if (doc.exists && doc.data() != null) {
-        return UserModel.fromMap(doc.data()!);
+        return UserModel.fromFirestore(doc);
       }
       return null;
     } catch (e) {
@@ -253,7 +260,7 @@ class AuthRepository {
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return 'No user found with this email.';
+        return 'No account found with this email.';
       case 'wrong-password':
         return 'Wrong password provided.';
       case 'email-already-in-use':

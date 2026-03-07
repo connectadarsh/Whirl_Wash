@@ -54,22 +54,3 @@ final loginPasswordVisibilityProvider = StateProvider.autoDispose<bool>((ref) {
 final loginFormKeyProvider = Provider.autoDispose<GlobalKey<FormState>>((ref) {
   return GlobalKey<FormState>();
 });
-
-// =====================================================================
-// 4. ANIMATION CONTROLLER PROVIDER - RIVERPOD 3.0 COMPATIBLE
-// =====================================================================
-
-// ✅ OPTION 1: Remove Animations (Simplest - Recommended)
-// Animations aren't essential for login screen functionality
-// Pure Riverpod without StatefulWidget complications
-
-// ✅ OPTION 2: Use AnimationController in Provider (If you need animations)
-// Note: This requires TickerProvider which is tricky without StatefulWidget
-
-// For pure Riverpod, we'll remove the animation provider since:
-// 1. Animations require TickerProviderStateMixin
-// 2. TickerProvider only works with StatefulWidget
-// 3. Login screen doesn't need animations for functionality
-
-// If you absolutely need animations, keep the StatefulWidget approach
-// or use implicit animations (AnimatedOpacity, AnimatedContainer)

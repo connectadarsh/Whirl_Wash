@@ -1,7 +1,7 @@
-// ---------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:whirl_wash/core/router/app_router_gorouter.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -110,6 +110,22 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  // ============ FORGOT PASSWORD ============
+
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await _authRepository.sendPasswordResetEmail(email: email);
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Password reset email sent! Check your inbox.',
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
   // ============ GOOGLE AUTH ============
 
   Future<void> signInWithGoogle() async {
@@ -124,7 +140,6 @@ class AuthController extends Notifier<AuthState> {
           successMessage: 'Signed in with Google!',
         );
       } else {
-        // User cancelled
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
@@ -184,7 +199,7 @@ class AuthController extends Notifier<AuthState> {
 
     try {
       await _authRepository.signOut();
-      state = AuthState(); // Reset state
+      state = AuthState();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -193,12 +208,10 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  // Clear error message
   void clearError() {
     state = state.copyWith(error: null);
   }
 
-  // Clear success message
   void clearSuccess() {
     state = state.copyWith(successMessage: null);
   }
