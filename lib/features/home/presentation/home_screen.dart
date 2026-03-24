@@ -1140,614 +1140,723 @@
 // HOME SCREEN - Converted to Riverpod (No StatefulWidget)
 // File: lib/features/home/presentation/home_screen.dart
 // =====================================================================
+// import 'package:flutter/material.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:whirl_wash/features/auth/data/models/user_model.dart';
+// import 'package:go_router/go_router.dart';
+// import 'providers/home_screen_providers.dart';
+// import '../../auth/presentation/providers/auth_provider.dart';
+
+// class HomeScreen extends ConsumerWidget {
+//   const HomeScreen({super.key});
+
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     // Watch navigation index
+//     final currentIndex = ref.watch(homeBottomNavIndexProvider);
+
+//     // Watch banner state
+//     final bannerIndex = ref.watch(homeBannerIndexProvider);
+//     final pageController = ref.watch(homeBannerPageControllerProvider);
+
+//     // Start auto-scroll timer (just by watching it)
+//     ref.watch(homeBannerAutoScrollProvider);
+
+//     // Get user data
+//     final currentUserData = ref.watch(currentUserProvider);
+
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       body: _buildBody(
+//         context,
+//         ref,
+//         currentUserData,
+//         pageController,
+//         bannerIndex,
+//       ),
+//       bottomNavigationBar: _buildBottomNav(ref, currentIndex),
+//     );
+//   }
+
+//   // ================================================================
+//   // MAIN BODY
+//   // ================================================================
+
+//   Widget _buildBody(
+//     BuildContext context,
+//     WidgetRef ref,
+//     AsyncValue<UserModel?> currentUserData,
+//     PageController pageController,
+//     int bannerIndex,
+//   ) {
+//     return CustomScrollView(
+//       slivers: [
+//         // App Bar with glass effect + Logout button
+//         _buildAppBar(context, ref, currentUserData),
+
+//         // Main content
+//         SliverToBoxAdapter(
+//           child: Padding(
+//             padding: const EdgeInsets.all(20),
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 // Banner carousel
+//                 _buildBannerCarousel(ref, pageController, bannerIndex),
+
+//                 const SizedBox(height: 24),
+
+//                 // Quick stats cards
+//                 _buildQuickStats(),
+
+//                 const SizedBox(height: 24),
+
+//                 // Services section header
+//                 const Text(
+//                   'Our Services',
+//                   style: TextStyle(
+//                     fontSize: 22,
+//                     fontWeight: FontWeight.bold,
+//                     color: Colors.white,
+//                   ),
+//                 ),
+
+//                 const SizedBox(height: 16),
+
+//                 // Services grid
+//                 _buildServicesGrid(context),
+//               ],
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   // ================================================================
+//   // APP BAR WITH LOGOUT BUTTON
+//   // ================================================================
+
+//   Widget _buildAppBar(
+//     BuildContext context,
+//     WidgetRef ref,
+//     AsyncValue<UserModel?> currentUserData,
+//   ) {
+//     return SliverAppBar(
+//       expandedHeight: 120,
+//       floating: false,
+//       pinned: true,
+//       backgroundColor: Colors.transparent,
+//       flexibleSpace: Container(
+//         decoration: BoxDecoration(
+//           gradient: LinearGradient(
+//             begin: Alignment.topLeft,
+//             end: Alignment.bottomRight,
+//             colors: [
+//               Colors.black.withOpacity(0.8),
+//               const Color(0xFF4ECDC4).withOpacity(0.3),
+//             ],
+//           ),
+//           borderRadius: const BorderRadius.only(
+//             bottomLeft: Radius.circular(30),
+//             bottomRight: Radius.circular(30),
+//           ),
+//         ),
+//         child: FlexibleSpaceBar(
+//           title: currentUserData.when(
+//             data: (userData) {
+//               // Try to get first name from Firestore, then Firebase Auth, then default
+//               final firstName =
+//                   userData?.name?.split(' ').first ??
+//                   FirebaseAuth.instance.currentUser?.displayName
+//                       ?.split(' ')
+//                       .first ??
+//                   'there';
+//               return Text(
+//                 'Hi $firstName! 👋',
+//                 style: const TextStyle(
+//                   fontSize: 20,
+//                   fontWeight: FontWeight.bold,
+//                   color: Colors.white,
+//                 ),
+//               );
+//             },
+//             loading: () => const Text(
+//               'Hi there! 👋',
+//               style: TextStyle(fontSize: 20, color: Colors.white),
+//             ),
+//             error: (_, __) {
+//               final firstName =
+//                   FirebaseAuth.instance.currentUser?.displayName
+//                       ?.split(' ')
+//                       .first ??
+//                   'there';
+//               return Text(
+//                 'Hi $firstName! 👋',
+//                 style: const TextStyle(fontSize: 20, color: Colors.white),
+//               );
+//             },
+//           ),
+//           centerTitle: false,
+//           titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+//         ),
+//       ),
+//       actions: [
+//         // Notifications button
+//         IconButton(
+//           icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+//           onPressed: () {
+//             // TODO: Implement notifications
+//             ScaffoldMessenger.of(context).showSnackBar(
+//               SnackBar(
+//                 content: const Text('Notifications - Coming soon'),
+//                 backgroundColor: Colors.grey[800],
+//                 behavior: SnackBarBehavior.floating,
+//               ),
+//             );
+//           },
+//         ),
+
+//         // Logout button
+//         IconButton(
+//           icon: const Icon(Icons.logout, color: Colors.white),
+//           tooltip: 'Logout',
+//           onPressed: () => _showLogoutDialog(context, ref),
+//         ),
+
+//         const SizedBox(width: 8),
+//       ],
+//     );
+//   }
+
+//   // ================================================================
+//   // LOGOUT DIALOG
+//   // ================================================================
+
+//   Future<void> _showLogoutDialog(BuildContext context, WidgetRef ref) async {
+//     final shouldLogout = await showDialog<bool>(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         backgroundColor: const Color(0xFF1F2937),
+//         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+//         title: const Text(
+//           'Logout',
+//           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+//         ),
+//         content: const Text(
+//           'Are you sure you want to logout?',
+//           style: TextStyle(color: Colors.white70),
+//         ),
+//         actions: [
+//           // Cancel button
+//           TextButton(
+//             onPressed: () => Navigator.of(context).pop(false),
+//             child: Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+//           ),
+
+//           // Logout button
+//           ElevatedButton(
+//             onPressed: () => Navigator.of(context).pop(true),
+//             style: ElevatedButton.styleFrom(
+//               backgroundColor: const Color(0xFF4ECDC4),
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(12),
+//               ),
+//             ),
+//             child: const Text(
+//               'Logout',
+//               style: TextStyle(
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.bold,
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+
+//     // If user confirmed logout
+//     if (shouldLogout == true && context.mounted) {
+//       await _handleLogout(context, ref);
+//     }
+//   }
+
+//   // ================================================================
+//   // LOGOUT HANDLER
+//   // ================================================================
+
+//   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+//     try {
+//       // Show loading indicator
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: const Row(
+//             children: [
+//               SizedBox(
+//                 width: 20,
+//                 height: 20,
+//                 child: CircularProgressIndicator(
+//                   strokeWidth: 2,
+//                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+//                 ),
+//               ),
+//               SizedBox(width: 16),
+//               Text('Logging out...'),
+//             ],
+//           ),
+//           backgroundColor: Colors.grey[800],
+//           duration: const Duration(seconds: 2),
+//         ),
+//       );
+
+//       // Call signOut from auth provider
+//       await ref.read(authControllerProvider.notifier).signOut();
+
+//       // Navigate to login screen
+//       if (context.mounted) {
+//         context.go('/login');
+//       }
+//     } catch (e) {
+//       // Show error if logout fails
+//       if (context.mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text('Logout failed: ${e.toString()}'),
+//             backgroundColor: Colors.red,
+//           ),
+//         );
+//       }
+//     }
+//   }
+
+//   // ================================================================
+//   // BANNER CAROUSEL
+//   // ================================================================
+
+//   Widget _buildBannerCarousel(
+//     WidgetRef ref,
+//     PageController pageController,
+//     int currentIndex,
+//   ) {
+//     return Container(
+//       height: 180,
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.circular(20),
+//         boxShadow: [
+//           BoxShadow(
+//             color: const Color(0xFF4ECDC4).withOpacity(0.3),
+//             blurRadius: 20,
+//             offset: const Offset(0, 10),
+//           ),
+//         ],
+//       ),
+//       child: Stack(
+//         children: [
+//           // PageView with banners
+//           PageView(
+//             controller: pageController,
+//             onPageChanged: (index) {
+//               // Update index when user swipes manually
+//               updateBannerIndexOnSwipe(ref, index);
+//             },
+//             children: [
+//               _buildBannerCard(
+//                 'Premium Laundry',
+//                 'Get 20% off on first order',
+//                 Colors.blue,
+//                 Icons.local_laundry_service,
+//               ),
+//               _buildBannerCard(
+//                 'Express Service',
+//                 'Same day delivery available',
+//                 Colors.purple,
+//                 Icons.flash_on,
+//               ),
+//             ],
+//           ),
+
+//           // Dot indicators
+//           Positioned(
+//             bottom: 16,
+//             left: 0,
+//             right: 0,
+//             child: Row(
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: List.generate(2, (index) {
+//                 final isActive = currentIndex == index;
+//                 return AnimatedContainer(
+//                   duration: const Duration(milliseconds: 300),
+//                   margin: const EdgeInsets.symmetric(horizontal: 4),
+//                   width: isActive ? 24 : 8,
+//                   height: 8,
+//                   decoration: BoxDecoration(
+//                     color: isActive
+//                         ? Colors.white
+//                         : Colors.white.withOpacity(0.4),
+//                     borderRadius: BorderRadius.circular(4),
+//                   ),
+//                 );
+//               }),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildBannerCard(
+//     String title,
+//     String subtitle,
+//     Color color,
+//     IconData icon,
+//   ) {
+//     return Container(
+//       margin: const EdgeInsets.symmetric(horizontal: 4),
+//       decoration: BoxDecoration(
+//         gradient: LinearGradient(
+//           colors: [color, color.withOpacity(0.7)],
+//           begin: Alignment.topLeft,
+//           end: Alignment.bottomRight,
+//         ),
+//         borderRadius: BorderRadius.circular(20),
+//       ),
+//       child: Padding(
+//         padding: const EdgeInsets.all(20),
+//         child: Row(
+//           children: [
+//             Expanded(
+//               child: Column(
+//                 mainAxisAlignment: MainAxisAlignment.center,
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     title,
+//                     style: const TextStyle(
+//                       fontSize: 24,
+//                       fontWeight: FontWeight.bold,
+//                       color: Colors.white,
+//                     ),
+//                   ),
+//                   const SizedBox(height: 8),
+//                   Text(
+//                     subtitle,
+//                     style: TextStyle(
+//                       fontSize: 14,
+//                       color: Colors.white.withOpacity(0.9),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//             Icon(icon, size: 80, color: Colors.white.withOpacity(0.3)),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   // ================================================================
+//   // QUICK STATS
+//   // ================================================================
+
+//   Widget _buildQuickStats() {
+//     return Row(
+//       children: [
+//         Expanded(
+//           child: _buildStatCard(
+//             'Active Orders',
+//             '3',
+//             Icons.shopping_bag,
+//             Colors.orange,
+//           ),
+//         ),
+//         const SizedBox(width: 12),
+//         Expanded(
+//           child: _buildStatCard(
+//             'Completed',
+//             '15',
+//             Icons.check_circle,
+//             Colors.green,
+//           ),
+//         ),
+//         const SizedBox(width: 12),
+//         Expanded(
+//           child: _buildStatCard(
+//             'Saved',
+//             '₹250',
+//             Icons.savings,
+//             const Color(0xFF4ECDC4),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildStatCard(
+//     String label,
+//     String value,
+//     IconData icon,
+//     Color color,
+//   ) {
+//     return Container(
+//       padding: const EdgeInsets.all(16),
+//       decoration: BoxDecoration(
+//         color: Colors.grey[900],
+//         borderRadius: BorderRadius.circular(16),
+//         border: Border.all(color: Colors.grey[800]!),
+//       ),
+//       child: Column(
+//         children: [
+//           Icon(icon, color: color, size: 28),
+//           const SizedBox(height: 8),
+//           Text(
+//             value,
+//             style: TextStyle(
+//               fontSize: 20,
+//               fontWeight: FontWeight.bold,
+//               color: color,
+//             ),
+//           ),
+//           const SizedBox(height: 4),
+//           Text(
+//             label,
+//             style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+//             textAlign: TextAlign.center,
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   // ================================================================
+//   // SERVICES GRID
+//   // ================================================================
+
+//   Widget _buildServicesGrid(BuildContext context) {
+//     final services = [
+//       _ServiceItem('Wash & Fold', Icons.local_laundry_service, Colors.blue),
+//       _ServiceItem('Wash & Iron', Icons.iron, Colors.purple),
+//       _ServiceItem('Dry Clean', Icons.dry_cleaning, Colors.orange),
+//       _ServiceItem('Iron Only', Icons.checkroom, Colors.green),
+//       _ServiceItem('Shoe Clean', Icons.cleaning_services, Colors.red),
+//       _ServiceItem('Express', Icons.flash_on, const Color(0xFF4ECDC4)),
+//     ];
+
+//     return GridView.builder(
+//       shrinkWrap: true,
+//       physics: const NeverScrollableScrollPhysics(),
+//       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+//         crossAxisCount: 3,
+//         mainAxisSpacing: 12,
+//         crossAxisSpacing: 12,
+//         childAspectRatio: 0.85,
+//       ),
+//       itemCount: services.length,
+//       itemBuilder: (context, index) {
+//         final service = services[index];
+//         return _buildServiceCard(context, service);
+//       },
+//     );
+//   }
+
+//   Widget _buildServiceCard(BuildContext context, _ServiceItem service) {
+//     return GestureDetector(
+//       onTap: () {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text('${service.title} - Coming soon'),
+//             backgroundColor: Colors.grey[800],
+//           ),
+//         );
+//       },
+//       child: Container(
+//         decoration: BoxDecoration(
+//           color: Colors.grey[900],
+//           borderRadius: BorderRadius.circular(16),
+//           border: Border.all(color: Colors.grey[800]!),
+//         ),
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Icon(service.icon, color: service.color, size: 40),
+//             const SizedBox(height: 8),
+//             Text(
+//               service.title,
+//               textAlign: TextAlign.center,
+//               style: const TextStyle(
+//                 fontSize: 12,
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.w600,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   // ================================================================
+//   // BOTTOM NAVIGATION
+//   // ================================================================
+
+//   Widget _buildBottomNav(WidgetRef ref, int currentIndex) {
+//     return Container(
+//       decoration: BoxDecoration(
+//         color: Colors.grey[900],
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.3),
+//             blurRadius: 10,
+//             offset: const Offset(0, -5),
+//           ),
+//         ],
+//       ),
+//       child: BottomNavigationBar(
+//         currentIndex: currentIndex,
+//         onTap: (index) {
+//           // Update navigation index using Riverpod
+//           navigateToTab(ref, index);
+//         },
+//         type: BottomNavigationBarType.fixed,
+//         backgroundColor: Colors.transparent,
+//         selectedItemColor: const Color(0xFF4ECDC4),
+//         unselectedItemColor: Colors.grey,
+//         elevation: 0,
+//         items: const [
+//           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+//           BottomNavigationBarItem(
+//             icon: Icon(Icons.shopping_bag),
+//             label: 'Orders',
+//           ),
+//           BottomNavigationBarItem(
+//             icon: Icon(Icons.shopping_cart),
+//             label: 'Cart',
+//           ),
+//           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ================================================================
+// // SERVICE ITEM MODEL
+// // ================================================================
+
+// class _ServiceItem {
+//   final String title;
+//   final IconData icon;
+//   final Color color;
+
+//   _ServiceItem(this.title, this.icon, this.color);
+// }
+
+// ----------------------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:whirl_wash/features/auth/data/models/user_model.dart';
-import 'package:go_router/go_router.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'providers/home_screen_providers.dart';
-import '../../auth/presentation/providers/auth_provider.dart';
+import 'screens/home_tab.dart';
+import 'screens/orders_tab.dart';
+import 'screens/cart_tab.dart';
+import 'screens/profile_tab.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  static const List<Widget> _tabs = [
+    HomeTab(),
+    OrdersTab(),
+    CartTab(),
+    ProfileTab(),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch navigation index
     final currentIndex = ref.watch(homeBottomNavIndexProvider);
-
-    // Watch banner state
-    final bannerIndex = ref.watch(homeBannerIndexProvider);
-    final pageController = ref.watch(homeBannerPageControllerProvider);
-
-    // Start auto-scroll timer (just by watching it)
-    ref.watch(homeBannerAutoScrollProvider);
-
-    // Get user data
-    final currentUserData = ref.watch(currentUserProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _buildBody(
-        context,
-        ref,
-        currentUserData,
-        pageController,
-        bannerIndex,
-      ),
-      bottomNavigationBar: _buildBottomNav(ref, currentIndex),
-    );
-  }
-
-  // ================================================================
-  // MAIN BODY
-  // ================================================================
-
-  Widget _buildBody(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue<UserModel?> currentUserData,
-    PageController pageController,
-    int bannerIndex,
-  ) {
-    return CustomScrollView(
-      slivers: [
-        // App Bar with glass effect + Logout button
-        _buildAppBar(context, ref, currentUserData),
-
-        // Main content
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Banner carousel
-                _buildBannerCarousel(ref, pageController, bannerIndex),
-
-                const SizedBox(height: 24),
-
-                // Quick stats cards
-                _buildQuickStats(),
-
-                const SizedBox(height: 24),
-
-                // Services section header
-                const Text(
-                  'Our Services',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Services grid
-                _buildServicesGrid(context),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ================================================================
-  // APP BAR WITH LOGOUT BUTTON
-  // ================================================================
-
-  Widget _buildAppBar(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue<UserModel?> currentUserData,
-  ) {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: Colors.transparent,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.black.withOpacity(0.8),
-              const Color(0xFF4ECDC4).withOpacity(0.3),
-            ],
-          ),
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(30),
-            bottomRight: Radius.circular(30),
-          ),
-        ),
-        child: FlexibleSpaceBar(
-          title: currentUserData.when(
-            data: (userData) {
-              // Try to get first name from Firestore, then Firebase Auth, then default
-              final firstName =
-                  userData?.name?.split(' ').first ??
-                  FirebaseAuth.instance.currentUser?.displayName
-                      ?.split(' ')
-                      .first ??
-                  'there';
-              return Text(
-                'Hi $firstName! 👋',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              );
-            },
-            loading: () => const Text(
-              'Hi there! 👋',
-              style: TextStyle(fontSize: 20, color: Colors.white),
-            ),
-            error: (_, __) {
-              final firstName =
-                  FirebaseAuth.instance.currentUser?.displayName
-                      ?.split(' ')
-                      .first ??
-                  'there';
-              return Text(
-                'Hi $firstName! 👋',
-                style: const TextStyle(fontSize: 20, color: Colors.white),
-              );
-            },
-          ),
-          centerTitle: false,
-          titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        ),
-      ),
-      actions: [
-        // Notifications button
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () {
-            // TODO: Implement notifications
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Notifications - Coming soon'),
-                backgroundColor: Colors.grey[800],
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
-        ),
-
-        // Logout button
-        IconButton(
-          icon: const Icon(Icons.logout, color: Colors.white),
-          tooltip: 'Logout',
-          onPressed: () => _showLogoutDialog(context, ref),
-        ),
-
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  // ================================================================
-  // LOGOUT DIALOG
-  // ================================================================
-
-  Future<void> _showLogoutDialog(BuildContext context, WidgetRef ref) async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1F2937),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Logout',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          // Cancel button
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[400])),
-          ),
-
-          // Logout button
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4ECDC4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Logout',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // If user confirmed logout
-    if (shouldLogout == true && context.mounted) {
-      await _handleLogout(context, ref);
-    }
-  }
-
-  // ================================================================
-  // LOGOUT HANDLER
-  // ================================================================
-
-  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              SizedBox(width: 16),
-              Text('Logging out...'),
-            ],
-          ),
-          backgroundColor: Colors.grey[800],
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-      // Call signOut from auth provider
-      await ref.read(authControllerProvider.notifier).signOut();
-
-      // Navigate to login screen
-      if (context.mounted) {
-        context.go('/login');
-      }
-    } catch (e) {
-      // Show error if logout fails
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logout failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  // ================================================================
-  // BANNER CAROUSEL
-  // ================================================================
-
-  Widget _buildBannerCarousel(
-    WidgetRef ref,
-    PageController pageController,
-    int currentIndex,
-  ) {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4ECDC4).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // PageView with banners
-          PageView(
-            controller: pageController,
-            onPageChanged: (index) {
-              // Update index when user swipes manually
-              updateBannerIndexOnSwipe(ref, index);
-            },
-            children: [
-              _buildBannerCard(
-                'Premium Laundry',
-                'Get 20% off on first order',
-                Colors.blue,
-                Icons.local_laundry_service,
-              ),
-              _buildBannerCard(
-                'Express Service',
-                'Same day delivery available',
-                Colors.purple,
-                Icons.flash_on,
-              ),
-            ],
-          ),
-
-          // Dot indicators
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(2, (index) {
-                final isActive = currentIndex == index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: isActive ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBannerCard(
-    String title,
-    String subtitle,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(icon, size: 80, color: Colors.white.withOpacity(0.3)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ================================================================
-  // QUICK STATS
-  // ================================================================
-
-  Widget _buildQuickStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Active Orders',
-            '3',
-            Icons.shopping_bag,
-            Colors.orange,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Completed',
-            '15',
-            Icons.check_circle,
-            Colors.green,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Saved',
-            '₹250',
-            Icons.savings,
-            const Color(0xFF4ECDC4),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[800]!),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ================================================================
-  // SERVICES GRID
-  // ================================================================
-
-  Widget _buildServicesGrid(BuildContext context) {
-    final services = [
-      _ServiceItem('Wash & Fold', Icons.local_laundry_service, Colors.blue),
-      _ServiceItem('Wash & Iron', Icons.iron, Colors.purple),
-      _ServiceItem('Dry Clean', Icons.dry_cleaning, Colors.orange),
-      _ServiceItem('Iron Only', Icons.checkroom, Colors.green),
-      _ServiceItem('Shoe Clean', Icons.cleaning_services, Colors.red),
-      _ServiceItem('Express', Icons.flash_on, const Color(0xFF4ECDC4)),
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        final service = services[index];
-        return _buildServiceCard(context, service);
-      },
-    );
-  }
-
-  Widget _buildServiceCard(BuildContext context, _ServiceItem service) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${service.title} - Coming soon'),
-            backgroundColor: Colors.grey[800],
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[800]!),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(service.icon, color: service.color, size: 40),
-            const SizedBox(height: 8),
-            Text(
-              service.title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ================================================================
-  // BOTTOM NAVIGATION
-  // ================================================================
-
-  Widget _buildBottomNav(WidgetRef ref, int currentIndex) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          // Update navigation index using Riverpod
-          navigateToTab(ref, index);
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        selectedItemColor: const Color(0xFF4ECDC4),
-        unselectedItemColor: Colors.grey,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag),
-            label: 'Orders',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Cart',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+      body: IndexedStack(index: currentIndex, children: _tabs),
+      bottomNavigationBar: _GNavBar(currentIndex: currentIndex),
     );
   }
 }
 
-// ================================================================
-// SERVICE ITEM MODEL
-// ================================================================
+class _GNavBar extends ConsumerWidget {
+  final int currentIndex;
+  const _GNavBar({required this.currentIndex});
 
-class _ServiceItem {
-  final String title;
-  final IconData icon;
-  final Color color;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A0A),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: GNav(
+            selectedIndex: currentIndex,
+            onTabChange: (index) => navigateToTab(ref, index),
 
-  _ServiceItem(this.title, this.icon, this.color);
+            // Colors
+            color: Colors.white.withValues(alpha: 0.4),
+            activeColor: Colors.white,
+            tabBackgroundColor: const Color(0xFF4ECDC4).withValues(alpha: 0.15),
+
+            // Style
+            gap: 8,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            haptic: true,
+            tabBorderRadius: 14,
+
+            // Tabs
+            tabs: const [
+              GButton(
+                icon: Icons.home_rounded,
+                text: 'Home',
+                iconActiveColor: Color(0xFF4ECDC4),
+                textColor: Color(0xFF4ECDC4),
+              ),
+              GButton(
+                icon: Icons.receipt_long_rounded,
+                text: 'Orders',
+                iconActiveColor: Color(0xFF4ECDC4),
+                textColor: Color(0xFF4ECDC4),
+              ),
+              GButton(
+                icon: Icons.shopping_cart_rounded,
+                text: 'Cart',
+                iconActiveColor: Color(0xFF4ECDC4),
+                textColor: Color(0xFF4ECDC4),
+              ),
+              GButton(
+                icon: Icons.person_rounded,
+                text: 'Profile',
+                iconActiveColor: Color(0xFF4ECDC4),
+                textColor: Color(0xFF4ECDC4),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

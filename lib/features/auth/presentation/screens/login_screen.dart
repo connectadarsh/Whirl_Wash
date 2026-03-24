@@ -197,18 +197,6 @@ class LoginScreen extends ConsumerWidget {
                                       Align(
                                         alignment: Alignment.centerRight,
                                         child: TextButton(
-                                          // onPressed: () {
-                                          //   ScaffoldMessenger.of(
-                                          //     context,
-                                          //   ).showSnackBar(
-                                          //     const SnackBar(
-                                          //       content: Text(
-                                          //         'Feature coming soon',
-                                          //       ),
-                                          //     ),
-                                          //   );
-
-                                          // },
                                           onPressed: () =>
                                               context.push('/forgot-password'),
                                           child: Text(

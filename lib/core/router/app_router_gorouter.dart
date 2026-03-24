@@ -8,6 +8,12 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:whirl_wash/features/home/presentation/screens/services/dry_clean_screen.dart';
+import 'package:whirl_wash/features/home/presentation/screens/services/express_screen.dart';
+import 'package:whirl_wash/features/home/presentation/screens/services/iron_only_screen.dart';
+import 'package:whirl_wash/features/home/presentation/screens/services/shoe_clean_screen.dart';
+import 'package:whirl_wash/features/home/presentation/screens/services/wash_fold_screen.dart';
+import 'package:whirl_wash/features/home/presentation/screens/services/wash_iron_screen.dart';
 
 // Screens
 import '../../features/splash/presentation/screens/splash_screen.dart';
@@ -142,6 +148,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'wash-fold',
+            builder: (_, __) => const WashFoldScreen(),
+          ),
+          GoRoute(
+            path: 'iron-only',
+            name: 'iron-only',
+            builder: (_, __) => const IronOnlyScreen(),
+          ),
+          GoRoute(
+            path: 'wash-iron',
+            name: 'wash-iron',
+            builder: (_, __) => const WashIronScreen(),
+          ),
+          GoRoute(
+            path: 'dry-clean',
+            name: 'dry-clean',
+            builder: (_, __) => const DryCleanScreen(),
+          ),
+          GoRoute(
+            path: 'shoe-clean',
+            name: 'shoe-clean',
+            builder: (_, __) => const ShoeCleanScreen(),
+          ),
+          GoRoute(
+            path: 'express',
+            name: 'express',
+            builder: (_, __) => const ExpressScreen(),
+          ),
+        ],
       ),
     ],
 
