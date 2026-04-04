@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:whirl_wash/features/home/data/models/dry_clean_item.dart';
 import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
 import '../../../../../core/constants/app_colors.dart';
 
