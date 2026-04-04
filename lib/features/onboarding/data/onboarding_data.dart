@@ -1,5 +1,3 @@
-// ----------------------------------New------------------------------------------
-
 class OnboardingItem {
   final String title;
   final String subtitle;

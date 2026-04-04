@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:whirl_wash/core/constants/app_colors.dart';
@@ -14,9 +13,7 @@ class ProfileAvatarPicker extends ConsumerWidget {
     return Column(
       children: [
         GestureDetector(
-          onTap: () {
-            // TODO: image picker integration
-          },
+          onTap: () {},
           child: Stack(
             children: [
               Container(
