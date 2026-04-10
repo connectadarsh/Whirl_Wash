@@ -2,25 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
+import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
+import 'package:whirl_wash/features/home/data/repositories/config_repository.dart';
+import 'package:whirl_wash/features/home/presentation/providers/cart_provider.dart';
+import 'package:whirl_wash/features/home/presentation/providers/config_providers.dart';
 import 'package:whirl_wash/features/home/presentation/providers/service_search_provider.dart';
-import '../../../../../core/constants/app_colors.dart';
-import '../../../data/models/fabric_type.dart';
-import '../../../data/repositories/config_repository.dart';
-import '../../providers/cart_provider.dart';
-import '../../providers/config_providers.dart';
-import '../../widgets/service_item_card.dart';
-import '../../widgets/service_search_bar.dart';
-import '../../widgets/service_bottom_bar.dart';
-import '../../widgets/service_fabric_sheet.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_bottom_bar.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_fabric_sheet.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_item_card.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_search_bar.dart';
 
 // =====================================================================
 // LOCAL STATE PROVIDERS
 // =====================================================================
 
-// Stores selected service id (e.g. 'wash_fold')
 final _selectedServiceIdProvider = StateProvider<String?>((ref) => null);
-
-// Stores selected express time
 final _selectedTimeProvider = StateProvider<ExpressTimeConfig?>((ref) => null);
 
 // =====================================================================
@@ -37,7 +34,6 @@ class ExpressScreen extends ConsumerWidget {
     final selectedServiceId = ref.watch(_selectedServiceIdProvider);
     final selectedTime = ref.watch(_selectedTimeProvider);
 
-    // Auto-select first service and time when data loads
     ref.listen(expressServicesConfigProvider, (_, next) {
       next.whenData((services) {
         if (services.isNotEmpty &&
@@ -61,20 +57,13 @@ class ExpressScreen extends ConsumerWidget {
       appBar: _buildAppBar(context),
       body: Column(
         children: [
-          // Service selector
           _ServiceSelector(
             servicesAsync: servicesAsync,
             selectedId: selectedServiceId,
           ),
-
-          // Time selector
           _TimeSelector(timesAsync: timesAsync, selectedTime: selectedTime),
-
-          // Surcharge banner
           if (selectedTime != null)
             _SurchargeBanner(surcharge: selectedTime.surcharge),
-
-          // Item list
           if (selectedServiceId != null)
             Expanded(child: _ServiceItemList(serviceId: selectedServiceId))
           else
@@ -156,7 +145,7 @@ class ExpressScreen extends ConsumerWidget {
 }
 
 // =====================================================================
-// SERVICE SELECTOR — from Firestore
+// SERVICE SELECTOR
 // =====================================================================
 
 class _ServiceSelector extends ConsumerWidget {
@@ -285,7 +274,7 @@ class _ServiceSelector extends ConsumerWidget {
 }
 
 // =====================================================================
-// TIME SELECTOR — from Firestore
+// TIME SELECTOR
 // =====================================================================
 
 class _TimeSelector extends ConsumerWidget {
@@ -386,7 +375,7 @@ class _TimeSelector extends ConsumerWidget {
 }
 
 // =====================================================================
-// SURCHARGE BANNER — surcharge is now int
+// SURCHARGE BANNER
 // =====================================================================
 
 class _SurchargeBanner extends StatelessWidget {
@@ -408,7 +397,7 @@ class _SurchargeBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.bolt_rounded, size: 16, color: Colors.orange),
+          const Icon(Icons.bolt_rounded, size: 16, color: Colors.orange),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -426,7 +415,7 @@ class _SurchargeBanner extends StatelessWidget {
 }
 
 // =====================================================================
-// ITEM LIST — based on selected service id
+// ITEM LIST
 // =====================================================================
 
 class _ServiceItemList extends ConsumerWidget {
@@ -434,6 +423,7 @@ class _ServiceItemList extends ConsumerWidget {
   const _ServiceItemList({required this.serviceId});
 
   bool get _isIronOnly => serviceId == 'iron_only';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(itemsConfigProvider(serviceId));
@@ -462,18 +452,9 @@ class _ServiceItemList extends ConsumerWidget {
                     ),
                   )
                   .toList();
-
-              if (_isIronOnly) {
-                return _buildIronList(context, ref, filtered, searchQuery);
-              } else {
-                return _buildWashFoldList(
-                  context,
-                  ref,
-                  filtered,
-                  searchQuery,
-                  serviceId,
-                );
-              }
+              return _isIronOnly
+                  ? _buildIronList(ref, filtered)
+                  : _buildWashFoldList(ref, filtered, serviceId);
             },
           ),
         ),
@@ -482,24 +463,21 @@ class _ServiceItemList extends ConsumerWidget {
   }
 
   Widget _buildWashFoldList(
-    BuildContext context,
     WidgetRef ref,
     List<ItemConfig> filtered,
-    String searchQuery,
     String serviceId,
   ) {
     final cartMap = ref.watch(cartProvider);
     final notifier = ref.read(cartProvider.notifier);
-    final selectedTime = ref.read(_selectedTimeProvider);
-    final timeSlot = selectedTime?.id;
+    final timeSlot = ref.read(_selectedTimeProvider)?.id;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         ...filtered.map((item) {
-          final entry = notifier.entryFor(item.id, serviceId);
           final cartEntry = cartMap['express_${serviceId}_${item.id}'];
           return ServiceItemCard(
-            emoji: item.emoji,
+            imageUrl: item.imageUrl,
             name: item.name,
             quantity: cartEntry?.quantity ?? 0,
             fabric: cartEntry?.fabric,
@@ -508,6 +486,7 @@ class _ServiceItemList extends ConsumerWidget {
               serviceId,
               isExpress: true,
               expressTimeSlot: timeSlot,
+              imageUrl: item.imageUrl,
             ),
             onDecrement: () =>
                 notifier.decrement(item.id, serviceId, isExpress: true),
@@ -520,7 +499,6 @@ class _ServiceItemList extends ConsumerWidget {
             .map(
               (e) => ServiceItemCard(
                 isCustom: true,
-                emoji: '🧺',
                 name: e.customName!,
                 quantity: e.quantity,
                 fabric: e.fabric,
@@ -536,46 +514,41 @@ class _ServiceItemList extends ConsumerWidget {
     );
   }
 
-  Widget _buildIronList(
-    BuildContext context,
-    WidgetRef ref,
-    List<ItemConfig> filtered,
-    String searchQuery,
-  ) {
+  Widget _buildIronList(WidgetRef ref, List<ItemConfig> filtered) {
     final cartMap = ref.watch(cartProvider);
     final notifier = ref.read(cartProvider.notifier);
-    const serviceId = 'iron_only';
-    final selectedTime = ref.read(_selectedTimeProvider);
-    final timeSlot = selectedTime?.id;
+    const sid = 'iron_only';
+    final timeSlot = ref.read(_selectedTimeProvider)?.id;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         ...filtered.map((item) {
-          final cartEntry = cartMap['express_${serviceId}_${item.id}'];
+          final cartEntry = cartMap['express_${sid}_${item.id}'];
           return ServiceItemCard(
-            emoji: item.emoji,
+            imageUrl: item.imageUrl,
             name: item.name,
             quantity: cartEntry?.quantity ?? 0,
             onIncrement: () => notifier.increment(
               item.id,
-              serviceId,
+              sid,
               isExpress: true,
               expressTimeSlot: timeSlot,
+              imageUrl: item.imageUrl,
             ),
             onDecrement: () =>
-                notifier.decrement(item.id, serviceId, isExpress: true),
+                notifier.decrement(item.id, sid, isExpress: true),
           );
         }),
         ...cartMap.values
-            .where((e) => e.serviceId == serviceId && e.isCustom && e.isExpress)
+            .where((e) => e.serviceId == sid && e.isCustom && e.isExpress)
             .map(
               (e) => ServiceItemCard(
                 isCustom: true,
-                emoji: '🧺',
                 name: e.customName!,
                 quantity: e.quantity,
-                onIncrement: () => notifier.increment(e.itemId, serviceId),
-                onDecrement: () => notifier.decrement(e.itemId, serviceId),
+                onIncrement: () => notifier.increment(e.itemId, sid),
+                onDecrement: () => notifier.decrement(e.itemId, sid),
               ),
             ),
         _AddCustomIronCard(),
@@ -882,7 +855,6 @@ class _CustomCardBase extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.secondary.withValues(alpha: 0.4),
-                      width: 1,
                     ),
                   ),
                   child: Icon(

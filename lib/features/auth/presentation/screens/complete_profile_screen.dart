@@ -4,8 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:whirl_wash/core/constants/app_colors.dart';
 import 'package:whirl_wash/features/auth/presentation/providers/complete_profile_screen_providers.dart';
-import 'package:whirl_wash/features/auth/presentation/providers/profile%20completion_provider.dart';
-import 'package:whirl_wash/features/auth/presentation/widgets/address_selection.dart';
+import 'package:whirl_wash/features/auth/presentation/providers/profile_completion_provider.dart';
+import 'package:whirl_wash/features/auth/presentation/widgets/address_section.dart';
 import 'package:whirl_wash/features/auth/presentation/widgets/profile_avatar_picker.dart';
 import 'package:whirl_wash/features/auth/presentation/widgets/gender_selector.dart';
 
@@ -213,7 +213,13 @@ class CompleteProfileScreen extends ConsumerWidget {
                           const SizedBox(height: 24),
 
                           // Address
-                          AddressSection(controllers: controllers),
+                          // AddressSection(controllers: controllers),
+                          AddressSection(
+                            controllers: controllers,
+                            locationProvider:
+                                completeProfileLocationProvider, // ← add this line
+                          ),
+
                           const SizedBox(height: 32),
 
                           // Submit Button

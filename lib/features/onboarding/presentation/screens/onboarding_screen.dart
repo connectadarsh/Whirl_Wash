@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/onboarding_data.dart';
-import '../providers/onboarding_provider.dart';
-import '../../../../core/constants/app_colors.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
+import 'package:whirl_wash/features/onboarding/data/onboarding_data.dart';
+import 'package:whirl_wash/features/onboarding/presentation/providers/onboarding_provider.dart';
 
 // Modern Riverpod Notifiers
 class CurrentPageNotifier extends Notifier<int> {

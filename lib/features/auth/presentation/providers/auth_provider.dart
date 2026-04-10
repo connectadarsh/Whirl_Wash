@@ -1,9 +1,7 @@
-// ----------------------------------------------------------------------------
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:whirl_wash/features/auth/data/repositories/auth_repository.dart';
 import '../../data/models/user_model.dart';
-import '../../data/repositories/auth_repository.dart';
 
 // Auth repository provider
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

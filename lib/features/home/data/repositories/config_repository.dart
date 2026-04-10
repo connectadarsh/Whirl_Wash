@@ -41,12 +41,13 @@ class ServiceConfig {
 class ItemConfig {
   final String id;
   final String name;
-  final String emoji;
+  final String? imageUrl; // ← replaces emoji
   final int order;
+
   const ItemConfig({
     required this.id,
     required this.name,
-    required this.emoji,
+    this.imageUrl,
     required this.order,
   });
 }
@@ -88,7 +89,6 @@ class ExpressTimeConfig {
 class ConfigRepository {
   final _base = FirebaseFirestore.instance.collection('config').doc('init');
 
-  // Fetch all enabled services sorted by order
   Future<List<ServiceConfig>> fetchServices() async {
     try {
       final snap = await _base.collection('services').orderBy('order').get();
@@ -99,13 +99,8 @@ class ConfigRepository {
     }
   }
 
-  // Fetch enabled items for a service
-  // 1. Get service document → read items map
-  // 2. Get master_items → read name + emoji
-  // 3. Join them → return only enabled items sorted by order
   Future<List<ItemConfig>> fetchItems(String serviceId) async {
     try {
-      // Step 1 — get service document to read items map
       final serviceDoc = await _base
           .collection('services')
           .doc(serviceId)
@@ -118,39 +113,34 @@ class ConfigRepository {
 
       if (itemsMap == null || itemsMap.isEmpty) return [];
 
-      // Only return enabled items
       final enabledItems = itemsMap.entries
           .where((e) => (e.value as Map<String, dynamic>)['enabled'] == true)
           .toList();
 
       if (enabledItems.isEmpty) return [];
 
-      // Step 2 — fetch all master items in one read
       final masterSnap = await _base.collection('master_items').get();
       final masterMap = {for (final doc in masterSnap.docs) doc.id: doc.data()};
 
-      // Step 3 — join and build ItemConfig list
       final result = <ItemConfig>[];
       for (final entry in enabledItems) {
         final itemId = entry.key;
         final itemData = entry.value as Map<String, dynamic>;
         final master = masterMap[itemId];
 
-        if (master == null) continue; // skip if not in master
+        if (master == null) continue;
 
         result.add(
           ItemConfig(
             id: itemId,
             name: master['name'] ?? '',
-            emoji: master['emoji'] ?? '',
+            imageUrl: master['imageUrl'] as String?, // ← read imageUrl
             order: itemData['order'] ?? 0,
           ),
         );
       }
 
-      // Sort by order
       result.sort((a, b) => a.order.compareTo(b.order));
-
       debugPrint('fetchItems($serviceId): loaded ${result.length} items');
       return result;
     } catch (e) {
@@ -159,7 +149,6 @@ class ConfigRepository {
     }
   }
 
-  // Fetch express enabled services (expressEnabled: true)
   Future<List<ServiceConfig>> fetchExpressServices() async {
     try {
       final snap = await _base.collection('services').orderBy('order').get();
@@ -173,7 +162,6 @@ class ConfigRepository {
     }
   }
 
-  // Fetch enabled express times sorted by order
   Future<List<ExpressTimeConfig>> fetchExpressTimes() async {
     try {
       final snap = await _base
@@ -189,7 +177,6 @@ class ConfigRepository {
     }
   }
 
-  // Fetch a single service (for ratePerKg in cart/estimator)
   Future<ServiceConfig?> fetchService(String serviceId) async {
     try {
       final doc = await _base.collection('services').doc(serviceId).get();

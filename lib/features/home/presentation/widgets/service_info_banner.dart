@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_colors.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 
 class ServiceInfoBanner extends StatelessWidget {
   final String message;

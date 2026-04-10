@@ -6,8 +6,14 @@ class UserModel {
   final String? email;
   final String? phone;
   final String? photoUrl;
-  final String authProvider; // 'email', 'google', 'phone'
+  final String authProvider;
   final DateTime createdAt;
+  // ── Profile completion fields ──
+  final String? gender;
+  final String? houseName;
+  final String? address;
+  final double? latitude;
+  final double? longitude;
 
   UserModel({
     required this.id,
@@ -17,9 +23,13 @@ class UserModel {
     this.photoUrl,
     required this.authProvider,
     required this.createdAt,
+    this.gender,
+    this.houseName,
+    this.address,
+    this.latitude,
+    this.longitude,
   });
 
-  // Create from Firebase Auth User
   factory UserModel.fromFirebaseUser({
     required String uid,
     String? displayName,
@@ -39,7 +49,6 @@ class UserModel {
     );
   }
 
-  // Create from Firestore document
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return UserModel(
@@ -50,23 +59,14 @@ class UserModel {
       photoUrl: data['photoUrl'],
       authProvider: data['authProvider'] ?? 'email',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      gender: data['gender'],
+      houseName: data['houseName'],
+      address: data['address'],
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
     );
   }
 
-  // Create from Map (needed for provider)
-  // factory UserModel.fromMap(Map<String, dynamic> data) {
-  //   return UserModel(
-  //     id: data['id'] ?? '',
-  //     name: data['name'],
-  //     email: data['email'],
-  //     phone: data['phone'],
-  //     photoUrl: data['photoUrl'],
-  //     authProvider: data['authProvider'] ?? 'email',
-  //     createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-  //   );
-  // }
-
-  // Convert to Firestore document
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
@@ -75,23 +75,14 @@ class UserModel {
       'photoUrl': photoUrl,
       'authProvider': authProvider,
       'createdAt': FieldValue.serverTimestamp(),
+      'gender': gender,
+      'houseName': houseName,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
-  // Convert to Map (useful for debugging and state management)
-  // Map<String, dynamic> toMap() {
-  //   return {
-  //     'id': id,
-  //     'name': name,
-  //     'email': email,
-  //     'phone': phone,
-  //     'photoUrl': photoUrl,
-  //     'authProvider': authProvider,
-  //     'createdAt': Timestamp.fromDate(createdAt),
-  //   };
-  // }
-
-  // Copy with method for updates
   UserModel copyWith({
     String? id,
     String? name,
@@ -100,6 +91,11 @@ class UserModel {
     String? photoUrl,
     String? authProvider,
     DateTime? createdAt,
+    String? gender,
+    String? houseName,
+    String? address,
+    double? latitude,
+    double? longitude,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -109,11 +105,15 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       authProvider: authProvider ?? this.authProvider,
       createdAt: createdAt ?? this.createdAt,
+      gender: gender ?? this.gender,
+      houseName: houseName ?? this.houseName,
+      address: address ?? this.address,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
   @override
-  String toString() {
-    return 'UserModel(id: $id, name: $name, email: $email, phone: $phone, authProvider: $authProvider)';
-  }
+  String toString() =>
+      'UserModel(id: $id, name: $name, email: $email, phone: $phone, authProvider: $authProvider)';
 }

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 import 'package:whirl_wash/features/auth/data/models/user_model.dart';
+import 'package:whirl_wash/features/auth/presentation/providers/auth_provider.dart';
 import 'package:whirl_wash/features/home/presentation/providers/config_providers.dart';
 import '../providers/home_tab_providers.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../../../core/constants/app_colors.dart';
 
 class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});

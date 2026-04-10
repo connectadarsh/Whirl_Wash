@@ -2,19 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
+import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
+import 'package:whirl_wash/features/home/presentation/providers/cart_provider.dart';
+import 'package:whirl_wash/features/home/presentation/providers/config_providers.dart';
 import 'package:whirl_wash/features/home/presentation/providers/service_search_provider.dart';
-import '../../../../../core/constants/app_colors.dart';
-import '../../../data/models/fabric_type.dart';
-import '../../providers/cart_provider.dart';
-import '../../providers/config_providers.dart';
-import '../../widgets/service_info_banner.dart';
-import '../../widgets/service_search_bar.dart';
-import '../../widgets/service_bottom_bar.dart';
-import '../../widgets/service_item_card.dart';
-import '../../widgets/service_fabric_sheet.dart';
-
-// Helper to generate cart key
-String cartKey(String itemId, String serviceId) => 'wash_fold_$itemId';
+import 'package:whirl_wash/features/home/presentation/widgets/service_bottom_bar.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_fabric_sheet.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_info_banner.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_item_card.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_search_bar.dart';
 
 class WashFoldScreen extends ConsumerWidget {
   const WashFoldScreen({super.key});
@@ -58,20 +55,21 @@ class WashFoldScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                   children: [
                     ...filtered.map((item) {
-                      final entry = ref
-                          .read(cartProvider.notifier)
-                          .entryFor(item.id, 'wash_fold');
                       final cartEntry = ref.watch(
                         cartProvider,
-                      )[cartKey(item.id, 'wash_fold')];
+                      )['wash_fold_${item.id}'];
                       return ServiceItemCard(
-                        emoji: item.emoji,
+                        imageUrl: item.imageUrl,
                         name: item.name,
                         quantity: cartEntry?.quantity ?? 0,
                         fabric: cartEntry?.fabric,
                         onIncrement: () => ref
                             .read(cartProvider.notifier)
-                            .increment(item.id, 'wash_fold'),
+                            .increment(
+                              item.id,
+                              'wash_fold',
+                              imageUrl: item.imageUrl,
+                            ),
                         onDecrement: () => ref
                             .read(cartProvider.notifier)
                             .decrement(item.id, 'wash_fold'),
@@ -82,7 +80,6 @@ class WashFoldScreen extends ConsumerWidget {
                     }),
                     ...customItems.map(
                       (e) => ServiceItemCard(
-                        emoji: '🧺',
                         isCustom: true,
                         name: e.customName!,
                         quantity: e.quantity,
@@ -330,7 +327,6 @@ class _AddCustomItemCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.08),
-                          width: 1,
                         ),
                       ),
                       child: Row(
@@ -403,7 +399,6 @@ class _AddCustomItemCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.secondary.withValues(alpha: 0.4),
-                      width: 1,
                     ),
                   ),
                   child: Icon(
@@ -422,7 +417,7 @@ class _AddCustomItemCard extends ConsumerWidget {
 }
 
 // =====================================================================
-// LOCAL PROVIDERS — per service using family
+// LOCAL PROVIDERS
 // =====================================================================
 
 final _customControllerProvider = Provider.autoDispose

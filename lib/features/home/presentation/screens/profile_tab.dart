@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
+import 'package:whirl_wash/features/auth/data/models/user_model.dart';
+import 'package:whirl_wash/features/auth/presentation/providers/auth_provider.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -15,7 +17,7 @@ class ProfileTab extends ConsumerWidget {
       backgroundColor: Colors.black,
       body: CustomScrollView(
         slivers: [
-          // App Bar
+          // ── App Bar ──────────────────────────────────────────────
           SliverAppBar(
             pinned: true,
             backgroundColor: Colors.transparent,
@@ -26,7 +28,7 @@ class ProfileTab extends ConsumerWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     Colors.black.withValues(alpha: 0.85),
-                    const Color(0xFF4ECDC4).withValues(alpha: 0.25),
+                    AppColors.secondary.withValues(alpha: 0.25),
                   ],
                 ),
                 border: Border(
@@ -55,79 +57,116 @@ class ProfileTab extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
 
-                  // Avatar + name
-                  currentUserData.when(
-                    data: (userData) => _buildProfileHeader(
-                      userData?.name,
-                      userData?.email,
-                      userData?.phone,
-                    ),
-                    loading: () => const _ProfileHeaderSkeleton(),
-                    error: (_, __) => _buildProfileHeader(
-                      FirebaseAuth.instance.currentUser?.displayName,
-                      FirebaseAuth.instance.currentUser?.email,
-                      null,
+                  // ── Header ──────────────────────────────────────
+                  Center(
+                    child: currentUserData.when(
+                      data: (userData) => _ProfileHeader(userData: userData),
+                      loading: () => const _ProfileHeaderSkeleton(),
+                      error: (_, __) => _ProfileHeader(
+                        userData: null,
+                        fallbackName:
+                            FirebaseAuth.instance.currentUser?.displayName,
+                        fallbackEmail: FirebaseAuth.instance.currentUser?.email,
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 32),
 
-                  // Info cards
+                  // ── Delivery Address Card ────────────────────────
                   currentUserData.when(
-                    data: (userData) => _buildInfoSection(
-                      name: userData?.name,
-                      email: userData?.email,
-                      phone: userData?.phone,
-                      provider: userData?.authProvider,
-                    ),
+                    data: (userData) =>
+                        _DeliveryAddressCard(userData: userData),
                     loading: () => const SizedBox.shrink(),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                  // Menu items
-                  _buildMenuItem(
-                    icon: Icons.edit_rounded,
-                    label: 'Edit Profile',
-                    onTap: () {
-                      // TODO: navigate to edit profile screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Edit Profile — Coming soon'),
-                          backgroundColor: Colors.grey[850],
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                  // ── 2-Column Grid ────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _GridCard(
+                          icon: Icons.edit_rounded,
+                          label: 'Edit Profile',
+                          subtitle: 'Update info',
+                          onTap: () => context.pushNamed('edit-profile'),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _GridCard(
+                          icon: Icons.help_outline_rounded,
+                          label: 'Help & Support',
+                          subtitle: 'Get help',
+                          onTap: () =>
+                              _showComingSoon(context, 'Help & Support'),
+                        ),
+                      ),
+                    ],
                   ),
 
+                  const SizedBox(height: 24),
+
+                  // ── Settings Section ─────────────────────────────
+                  Text(
+                    'SETTINGS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.4),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                   const SizedBox(height: 12),
-
-                  _buildMenuItem(
-                    icon: Icons.notifications_outlined,
-                    label: 'Notifications',
-                    onTap: () {},
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _SettingsRow(
+                          icon: Icons.privacy_tip_outlined,
+                          iconColor: Colors.blue,
+                          label: 'Privacy Policy',
+                          subtitle: 'How we collect & use your data',
+                          onTap: () =>
+                              _showComingSoon(context, 'Privacy Policy'),
+                        ),
+                        _SettingsDivider(),
+                        _SettingsRow(
+                          icon: Icons.description_outlined,
+                          iconColor: Colors.purple,
+                          label: 'Terms & Conditions',
+                          subtitle: 'Rules & guidelines for using the app',
+                          onTap: () =>
+                              _showComingSoon(context, 'Terms & Conditions'),
+                        ),
+                        _SettingsDivider(),
+                        _SettingsRow(
+                          icon: Icons.info_outline_rounded,
+                          iconColor: Colors.orange,
+                          label: 'About',
+                          subtitle: 'Version 1.0.0 · Build info & credits',
+                          onTap: () => _showComingSoon(context, 'About'),
+                        ),
+                      ],
+                    ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
-                  _buildMenuItem(
-                    icon: Icons.help_outline_rounded,
-                    label: 'Help & Support',
-                    onTap: () {},
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Logout button
-                  _LogoutButton(),
+                  // ── Logout Card ──────────────────────────────────
+                  const _LogoutButton(),
 
                   const SizedBox(height: 24),
                 ],
@@ -139,24 +178,55 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(String? name, String? email, String? phone) {
+  void _showComingSoon(BuildContext context, String label) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label — Coming soon'),
+        backgroundColor: Colors.grey[850],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// PROFILE HEADER
+// =====================================================================
+
+class _ProfileHeader extends StatelessWidget {
+  final UserModel? userData;
+  final String? fallbackName;
+  final String? fallbackEmail;
+
+  const _ProfileHeader({this.userData, this.fallbackName, this.fallbackEmail});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = userData?.name ?? fallbackName;
+    final contact = userData?.email ?? userData?.phone ?? fallbackEmail;
+
     final initials = (name != null && name.isNotEmpty)
         ? name.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
         : '?';
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 90,
           height: 90,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2C5F7C), Color(0xFF4ECDC4)],
+            gradient: LinearGradient(
+              colors: [
+                AppColors.secondary.withValues(alpha: 0.6),
+                AppColors.secondary,
+              ],
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF4ECDC4).withValues(alpha: 0.3),
+                color: AppColors.secondary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -182,10 +252,10 @@ class ProfileTab extends ConsumerWidget {
             color: Colors.white,
           ),
         ),
-        if (email != null) ...[
+        if (contact != null) ...[
           const SizedBox(height: 4),
           Text(
-            email,
+            contact,
             style: TextStyle(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.5),
@@ -195,113 +265,147 @@ class ProfileTab extends ConsumerWidget {
       ],
     );
   }
+}
 
-  Widget _buildInfoSection({
-    String? name,
-    String? email,
-    String? phone,
-    String? provider,
-  }) {
+// =====================================================================
+// DELIVERY ADDRESS CARD
+// =====================================================================
+
+class _DeliveryAddressCard extends StatelessWidget {
+  final UserModel? userData;
+
+  const _DeliveryAddressCard({this.userData});
+
+  @override
+  Widget build(BuildContext context) {
+    final houseName = userData?.houseName;
+    final address = userData?.address;
+
+    if (address == null && houseName == null) return const SizedBox.shrink();
+
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: Column(
-        children: [
-          if (name != null) _buildInfoRow(Icons.person_outline, 'Name', name),
-          if (email != null) ...[
-            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-            _buildInfoRow(Icons.email_outlined, 'Email', email),
-          ],
-          if (phone != null && phone.isNotEmpty) ...[
-            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-            _buildInfoRow(Icons.phone_outlined, 'Phone', phone),
-          ],
-          if (provider != null) ...[
-            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-            _buildInfoRow(
-              Icons.shield_outlined,
-              'Sign-in',
-              provider[0].toUpperCase() + provider.substring(1),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFF4ECDC4), size: 20),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w500,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.location_on_rounded,
+              color: AppColors.secondary,
+              size: 18,
             ),
           ),
-          const Spacer(),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Delivery Address',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (houseName != null && houseName.isNotEmpty)
+                  Text(
+                    houseName,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                if (address != null && address.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    address,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.55),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+// =====================================================================
+// 2-COLUMN GRID CARD
+// =====================================================================
+
+class _GridCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _GridCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 1,
-          ),
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: const Color(0xFF4ECDC4), size: 22),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.secondary, size: 22),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withValues(alpha: 0.3),
-              size: 16,
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
             ),
           ],
         ),
@@ -310,11 +414,96 @@ class ProfileTab extends ConsumerWidget {
   }
 }
 
-// ================================================================
-// LOGOUT BUTTON (separate ConsumerWidget — no StatefulWidget needed)
-// ================================================================
+// =====================================================================
+// SETTINGS ROW
+// =====================================================================
+
+class _SettingsRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: 0.25),
+              size: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      color: Colors.white.withValues(alpha: 0.06),
+      indent: 68,
+    );
+  }
+}
+
+// =====================================================================
+// LOGOUT BUTTON
+// =====================================================================
 
 class _LogoutButton extends ConsumerWidget {
+  const _LogoutButton();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
@@ -323,27 +512,55 @@ class _LogoutButton extends ConsumerWidget {
       onTap: authState.isLoading ? null : () => _showLogoutDialog(context, ref),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: Colors.red.withValues(alpha: 0.3),
-            width: 1,
-          ),
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, color: Colors.red[400], size: 20),
-            const SizedBox(width: 10),
-            Text(
-              'Logout',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.red[400],
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(
+                Icons.logout_rounded,
+                color: Colors.red[400],
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Log Out',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red[400],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'You can always log back in anytime',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.red[400]!.withValues(alpha: 0.5),
+              size: 14,
             ),
           ],
         ),
@@ -376,7 +593,7 @@ class _LogoutButton extends ConsumerWidget {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4ECDC4),
+              backgroundColor: AppColors.secondary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -400,9 +617,9 @@ class _LogoutButton extends ConsumerWidget {
   }
 }
 
-// ================================================================
+// =====================================================================
 // SKELETON LOADER
-// ================================================================
+// =====================================================================
 
 class _ProfileHeaderSkeleton extends StatelessWidget {
   const _ProfileHeaderSkeleton();
@@ -410,6 +627,7 @@ class _ProfileHeaderSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 90,

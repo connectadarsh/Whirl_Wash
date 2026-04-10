@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:whirl_wash/core/constants/app_colors.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/order_shared/order_address_card.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/order_shared/order_bag_card.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/order_shared/order_selection_label.dart';
 
 // =====================================================================
-// STATUS HELPERS (same as orders_tab)
+// STATUS HELPERS
 // =====================================================================
 
 const _statusLabels = {
@@ -16,15 +19,6 @@ const _statusLabels = {
   'ready': 'Ready',
   'out_for_delivery': 'Out for Delivery',
   'delivered': 'Delivered',
-};
-
-const _serviceNames = {
-  'wash_fold': 'Wash & Fold',
-  'wash_iron': 'Wash & Iron',
-  'dry_clean': 'Dry Clean',
-  'iron_only': 'Iron Only',
-  'shoe_clean': 'Shoe Clean',
-  'express': 'Express',
 };
 
 Color _statusColor(String status) {
@@ -85,7 +79,6 @@ class OrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Sort: express first
     final sorted = [...orders]
       ..sort((a, b) {
         final aExpress = a['isExpress'] == true ? 0 : 1;
@@ -101,9 +94,25 @@ class OrderDetailScreen extends ConsumerWidget {
           '${dt.day}/${dt.month}/${dt.year}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
 
-    final userAddress = orders.first['userAddress'] as String? ?? '';
-    final houseName = orders.first['houseName'] as String? ?? '';
+    final userAddress = orders.first['userAddress'] as String?;
+    final houseName = orders.first['houseName'] as String?;
     final specialInstructions = orders.first['specialInstructions'] as String?;
+
+    // Separate express and regular orders
+    final expressOrder = sorted
+        .where((o) => o['isExpress'] == true)
+        .firstOrNull;
+    final regularOrders = sorted.where((o) => o['isExpress'] != true).toList();
+
+    final expressItems =
+        (expressOrder?['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final regularItems = regularOrders.isNotEmpty
+        ? (regularOrders.first['items'] as List?)
+                  ?.cast<Map<String, dynamic>>() ??
+              []
+        : <Map<String, dynamic>>[];
+
+    final expressTimeSlot = expressOrder?['expressTimeSlot'] as String?;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -166,7 +175,7 @@ class OrderDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Date ─────────────────────────────────────────
+                  // ── Date ───────────────────────────────────────
                   if (dateStr.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),
@@ -189,8 +198,8 @@ class OrderDetailScreen extends ConsumerWidget {
                       ),
                     ),
 
-                  // ── Bag Status Cards ──────────────────────────────
-                  _SectionLabel(
+                  // ── Bag Status ──────────────────────────────────
+                  const OrderSectionLabel(
                     icon: Icons.inventory_2_rounded,
                     label: 'Bag Status',
                   ),
@@ -199,82 +208,38 @@ class OrderDetailScreen extends ConsumerWidget {
 
                   const SizedBox(height: 24),
 
-                  // ── Delivery Address ──────────────────────────────
-                  if (userAddress.isNotEmpty) ...[
-                    _SectionLabel(
+                  // ── Delivery Address ────────────────────────────
+                  if (userAddress != null && userAddress.isNotEmpty) ...[
+                    const OrderSectionLabel(
                       icon: Icons.location_on_rounded,
                       label: 'Delivery Address',
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF141414),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.location_on_rounded,
-                              color: AppColors.secondary,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (houseName.isNotEmpty)
-                                  Text(
-                                    houseName,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                if (houseName.isNotEmpty)
-                                  const SizedBox(height: 3),
-                                Text(
-                                  userAddress,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.55),
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    OrderAddressCard(
+                      houseName: houseName,
+                      address: userAddress,
                     ),
                     const SizedBox(height: 24),
                   ],
 
-                  // ── Items per bag ─────────────────────────────────
-                  ...sorted.map((order) => _BagItemsSection(order: order)),
+                  // ── Express Items ───────────────────────────────
+                  if (expressItems.isNotEmpty) ...[
+                    ExpressBagCard(
+                      items: expressItems,
+                      timeSlot: expressTimeSlot,
+                      bottomMargin: 20,
+                    ),
+                  ],
 
-                  // ── Special Instructions ──────────────────────────
+                  // ── Regular Items ───────────────────────────────
+                  if (regularItems.isNotEmpty) ...[
+                    RegularBagCard(items: regularItems, bottomMargin: 20),
+                  ],
+
+                  // ── Special Instructions ────────────────────────
                   if (specialInstructions != null &&
                       specialInstructions.trim().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _SectionLabel(
+                    const OrderSectionLabel(
                       icon: Icons.note_alt_outlined,
                       label: 'Special Instructions',
                     ),
@@ -310,7 +275,7 @@ class OrderDetailScreen extends ConsumerWidget {
 }
 
 // =====================================================================
-// BAG STATUS CARD
+// BAG STATUS CARD (only on detail screen)
 // =====================================================================
 
 class _BagStatusCard extends StatelessWidget {
@@ -406,197 +371,6 @@ class _BagStatusCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// =====================================================================
-// BAG ITEMS SECTION
-// =====================================================================
-
-class _BagItemsSection extends StatelessWidget {
-  final Map<String, dynamic> order;
-  const _BagItemsSection({required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    final isExpress = order['isExpress'] == true;
-    final items = (order['items'] as List?) ?? [];
-    final color = isExpress ? Colors.orange : AppColors.secondary;
-
-    if (items.isEmpty) return const SizedBox();
-
-    // Group by serviceId
-    final grouped = <String, List<Map<String, dynamic>>>{};
-    for (final item in items) {
-      final map = item as Map<String, dynamic>;
-      final sid = map['serviceId'] as String? ?? 'unknown';
-      grouped.putIfAbsent(sid, () => []).add(map);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionLabel(
-          icon: isExpress
-              ? Icons.bolt_rounded
-              : Icons.local_laundry_service_rounded,
-          label: isExpress ? 'Express Items' : 'Regular Items',
-          color: color,
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF141414),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            children: grouped.entries.map((entry) {
-              final serviceItems = entry.value;
-              final serviceName = _serviceNames[entry.key] ?? entry.key;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-                    child: Text(
-                      serviceName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  ...serviceItems.map((item) => _ItemRow(item: item)),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
-
-// =====================================================================
-// ITEM ROW
-// =====================================================================
-
-class _ItemRow extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const _ItemRow({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final itemId = item['itemId'] as String? ?? '';
-    final customName = item['customName'] as String?;
-    final quantity = item['quantity'] as int? ?? 1;
-    final fabric = item['fabric'] as String?;
-    final displayName = customName ?? itemId;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: customName != null
-                  ? AppColors.secondary.withValues(alpha: 0.12)
-                  : Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: customName != null
-                  ? Text(
-                      customName[0].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
-                      ),
-                    )
-                  : Text(itemId, style: const TextStyle(fontSize: 18)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                if (fabric != null && fabric != 'dontKnow') ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    fabric,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.secondary.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
-            child: Text(
-              '× $quantity',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =====================================================================
-// SECTION LABEL
-// =====================================================================
-
-class _SectionLabel extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color? color;
-  const _SectionLabel({required this.icon, required this.label, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: color ?? AppColors.secondary, size: 16),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ],
     );
   }
 }

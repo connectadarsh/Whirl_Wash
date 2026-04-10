@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
 import 'package:whirl_wash/features/home/presentation/widgets/service_circle_btn.dart';
 import 'package:whirl_wash/features/home/presentation/widgets/service_fabric_sheet.dart';
-import '../../../../../core/constants/app_colors.dart';
 
 class ServiceItemCard extends StatelessWidget {
-  final String emoji;
+  final String? imageUrl; // ← replaces emoji
   final String name;
   final int quantity;
   final FabricType? fabric;
@@ -18,7 +18,7 @@ class ServiceItemCard extends StatelessWidget {
 
   const ServiceItemCard({
     super.key,
-    required this.emoji,
+    this.imageUrl,
     required this.name,
     required this.quantity,
     required this.onIncrement,
@@ -56,7 +56,7 @@ class ServiceItemCard extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  // Emoji container
+                  // Image container
                   Container(
                     width: 56,
                     height: 56,
@@ -66,22 +66,49 @@ class ServiceItemCard extends StatelessWidget {
                           : Colors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
                       child: isCustom
-                          ? Text(
-                              name[0].toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.secondary,
+                          ? Center(
+                              child: Text(
+                                name[0].toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.secondary,
+                                ),
                               ),
                             )
-                          : Text(emoji, style: const TextStyle(fontSize: 28)),
+                          : imageUrl != null
+                          ? Image.network(
+                              imageUrl!,
+                              fit: BoxFit.cover,
+                              width: 56,
+                              height: 56,
+                              errorBuilder: (_, __, ___) =>
+                                  _PlaceholderIcon(name: name),
+                              loadingBuilder: (_, child, progress) {
+                                if (progress == null) return child;
+                                return Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.secondary.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : _PlaceholderIcon(name: name),
                     ),
                   ),
                   const SizedBox(width: 14),
 
-                  // Name + badge + unavailable tag
+                  // Name + badge
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +141,7 @@ class ServiceItemCard extends StatelessWidget {
                               ),
                             ),
                           )
-                        else if (_isInCart) ...[
+                        else if (_isInCart)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -135,12 +162,11 @@ class ServiceItemCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ),
 
-                  // Quantity control — disabled when item unavailable
+                  // Quantity controls
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -186,7 +212,7 @@ class ServiceItemCard extends StatelessWidget {
                         isScrollControlled: true,
                         builder: (_) => ServiceFabricSheet(
                           itemName: name,
-                          itemEmoji: emoji,
+                          itemImageUrl: imageUrl,
                           selected: fabric ?? FabricType.dontKnow,
                           onSelect: onFabricSelect!,
                         ),
@@ -238,6 +264,29 @@ class ServiceItemCard extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// PLACEHOLDER — shown when imageUrl is null or fails to load
+// =====================================================================
+
+class _PlaceholderIcon extends StatelessWidget {
+  final String name;
+  const _PlaceholderIcon({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.white.withValues(alpha: 0.4),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:whirl_wash/features/home/data/models/cart_entry.dart';
 import 'package:whirl_wash/features/home/data/repositories/order_repository.dart';
 import 'package:whirl_wash/features/home/presentation/providers/cart_provider.dart';
 

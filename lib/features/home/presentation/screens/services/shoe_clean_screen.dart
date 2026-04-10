@@ -2,19 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
+import 'package:whirl_wash/features/home/presentation/providers/cart_provider.dart';
+import 'package:whirl_wash/features/home/presentation/providers/config_providers.dart';
 import 'package:whirl_wash/features/home/presentation/providers/service_search_provider.dart';
-import 'package:whirl_wash/features/home/presentation/widgets/service_fabric_sheet.dart';
-import '../../../../../core/constants/app_colors.dart';
-import '../../providers/cart_provider.dart';
-import '../../providers/config_providers.dart';
-import '../../widgets/service_info_banner.dart';
-import '../../widgets/service_search_bar.dart';
-import '../../widgets/service_bottom_bar.dart';
-import '../../widgets/service_item_card.dart';
-
-// Helper to generate cart key
-String cartKey(String itemId, String serviceId) => 'shoe_clean_$itemId';
+import 'package:whirl_wash/features/home/presentation/widgets/service_bottom_bar.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_info_banner.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_item_card.dart';
+import 'package:whirl_wash/features/home/presentation/widgets/service_search_bar.dart';
 
 class ShoeCleanScreen extends ConsumerWidget {
   const ShoeCleanScreen({super.key});
@@ -61,15 +57,19 @@ class ShoeCleanScreen extends ConsumerWidget {
                     ...filtered.map((item) {
                       final cartEntry = ref.watch(
                         cartProvider,
-                      )[cartKey(item.id, 'shoe_clean')];
+                      )['shoe_clean_${item.id}'];
                       return ServiceItemCard(
-                        emoji: item.emoji,
+                        imageUrl: item.imageUrl,
                         name: item.name,
                         quantity: cartEntry?.quantity ?? 0,
                         quantityLabel: 'pair',
                         onIncrement: () => ref
                             .read(cartProvider.notifier)
-                            .increment(item.id, 'shoe_clean'),
+                            .increment(
+                              item.id,
+                              'shoe_clean',
+                              imageUrl: item.imageUrl,
+                            ),
                         onDecrement: () => ref
                             .read(cartProvider.notifier)
                             .decrement(item.id, 'shoe_clean'),
@@ -77,7 +77,6 @@ class ShoeCleanScreen extends ConsumerWidget {
                     }),
                     ...customItems.map(
                       (e) => ServiceItemCard(
-                        emoji: '🧺',
                         isCustom: true,
                         name: e.customName!,
                         quantity: e.quantity,
@@ -219,7 +218,7 @@ class _AddCustomItemCard extends ConsumerWidget {
               controller: controller,
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Item name (e.g. Dupatta, Blanket...)',
+                hintText: 'Item name (e.g. Sneakers, Boots...)',
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3),
                   fontSize: 13,
@@ -299,74 +298,7 @@ class _AddCustomItemCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (hasFabric) ...[
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => showModalBottomSheet(
-                      context: context,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => ServiceCustomFabricSheet(
-                        selected: fabric ?? FabricType.dontKnow,
-                        onSelect: (f) =>
-                            ref
-                                    .read(
-                                      _customFabricProvider(serviceId).notifier,
-                                    )
-                                    .state =
-                                f,
-                      ),
-                    ),
-                    child: Container(
-                      height: 46,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.texture_rounded,
-                            size: 16,
-                            color:
-                                fabric != null && fabric != FabricType.dontKnow
-                                ? AppColors.secondary
-                                : Colors.white.withValues(alpha: 0.35),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              fabric == null || fabric == FabricType.dontKnow
-                                  ? 'Select fabric'
-                                  : fabric.label,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color:
-                                    fabric != null &&
-                                        fabric != FabricType.dontKnow
-                                    ? AppColors.secondary
-                                    : Colors.white.withValues(alpha: 0.4),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ] else
-                const Spacer(),
+              const Spacer(),
               const SizedBox(width: 10),
               GestureDetector(
                 onTap: () {
@@ -378,16 +310,9 @@ class _AddCustomItemCard extends ConsumerWidget {
                           name: name,
                           serviceId: serviceId,
                           quantity: qty,
-                          fabric: fabric,
                         );
                     controller.clear();
                     ref.read(_customQtyProvider(serviceId).notifier).state = 1;
-                    if (hasFabric) {
-                      ref
-                              .read(_customFabricProvider(serviceId).notifier)
-                              .state =
-                          FabricType.dontKnow;
-                    }
                   }
                 },
                 child: Container(
@@ -398,7 +323,6 @@ class _AddCustomItemCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.secondary.withValues(alpha: 0.4),
-                      width: 1,
                     ),
                   ),
                   child: Icon(
@@ -417,7 +341,7 @@ class _AddCustomItemCard extends ConsumerWidget {
 }
 
 // =====================================================================
-// LOCAL PROVIDERS — per service using family
+// LOCAL PROVIDERS
 // =====================================================================
 
 final _customControllerProvider = Provider.autoDispose

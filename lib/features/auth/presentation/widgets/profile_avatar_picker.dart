@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:whirl_wash/core/constants/app_colors.dart';
-import 'package:whirl_wash/features/auth/presentation/providers/profile%20completion_provider.dart';
+import 'package:whirl_wash/features/auth/presentation/providers/profile_completion_provider.dart';
 
 class ProfileAvatarPicker extends ConsumerWidget {
   const ProfileAvatarPicker({super.key});

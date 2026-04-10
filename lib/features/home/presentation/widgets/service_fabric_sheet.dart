@@ -1,48 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
-import '../../../../../core/constants/app_colors.dart';
 
 // =====================================================================
-// SHOW FABRIC BOTTOM SHEET — call this from any screen
-// =====================================================================
-
-void showFabricBottomSheet({
-  required BuildContext context,
-  required WidgetRef ref,
-  required String itemId,
-  required String itemName,
-  required String itemEmoji,
-  required FabricType selected,
-  required void Function(FabricType) onSelect,
-}) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (_) => ServiceFabricSheet(
-      itemName: itemName,
-      itemEmoji: itemEmoji,
-      selected: selected,
-      onSelect: onSelect,
-    ),
-  );
-}
-
-// =====================================================================
-// FABRIC SHEET — for catalogue items (shows item name/emoji in header)
+// FABRIC SHEET — for catalogue items
 // =====================================================================
 
 class ServiceFabricSheet extends StatelessWidget {
   final String itemName;
-  final String itemEmoji;
+  final String? itemImageUrl; // ← replaces itemEmoji
   final FabricType selected;
   final void Function(FabricType) onSelect;
 
   const ServiceFabricSheet({
     super.key,
     required this.itemName,
-    required this.itemEmoji,
+    this.itemImageUrl,
     required this.selected,
     required this.onSelect,
   });
@@ -87,8 +60,15 @@ class ServiceFabricSheet extends StatelessWidget {
                   color: AppColors.secondary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Center(
-                  child: Text(itemEmoji, style: const TextStyle(fontSize: 18)),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: itemImageUrl != null
+                      ? Image.network(
+                          itemImageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _placeholder(itemName),
+                        )
+                      : _placeholder(itemName),
                 ),
               ),
               const SizedBox(width: 12),
@@ -119,16 +99,28 @@ class ServiceFabricSheet extends StatelessWidget {
           Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
           const SizedBox(height: 8),
 
-          // Fabric options
           ..._buildFabricOptions(context, selected, onSelect),
         ],
+      ),
+    );
+  }
+
+  Widget _placeholder(String name) {
+    return Center(
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white.withValues(alpha: 0.4),
+        ),
       ),
     );
   }
 }
 
 // =====================================================================
-// CUSTOM FABRIC SHEET — for custom items (generic title)
+// CUSTOM FABRIC SHEET — for custom items
 // =====================================================================
 
 class ServiceCustomFabricSheet extends StatelessWidget {

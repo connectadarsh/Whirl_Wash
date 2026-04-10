@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:whirl_wash/core/constants/app_colors.dart';
 import 'package:whirl_wash/features/home/data/repositories/cart_repository.dart';
 import 'package:whirl_wash/features/home/presentation/providers/cart_provider.dart';
-import '../../../../../core/constants/app_colors.dart';
 
 class ServiceBottomBar extends ConsumerWidget {
   final Color? accentColor;

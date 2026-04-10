@@ -1,20 +1,16 @@
-// ----------------------------------------------------------------------------------
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../models/user_model.dart';
+import 'package:whirl_wash/features/auth/data/models/user_model.dart';
 
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Get current user
   User? get currentUser => _auth.currentUser;
 
-  // Auth state stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Initialize Google Sign-In
   Future<void> initializeGoogleSignIn() async {
     try {
       await GoogleSignIn.instance.initialize();
@@ -23,7 +19,8 @@ class AuthRepository {
     }
   }
 
-  // Sign in with email and password
+  // ============ EMAIL/PASSWORD ============
+
   Future<UserCredential?> signInWithEmail({
     required String email,
     required String password,
@@ -38,7 +35,6 @@ class AuthRepository {
     }
   }
 
-  // Sign up with email and password
   Future<UserCredential?> signUpWithEmail({
     required String email,
     required String password,
@@ -54,14 +50,12 @@ class AuthRepository {
 
       if (userCredential.user != null) {
         final user = userCredential.user!;
-
         final userModel = UserModel.fromFirebaseUser(
           uid: user.uid,
           displayName: name,
           email: email,
           provider: 'email',
         );
-
         await _firestore.collection('users').doc(user.uid).set({
           ...userModel.toFirestore(),
           'profileComplete': false,
@@ -74,7 +68,8 @@ class AuthRepository {
     }
   }
 
-  // Sign in with Google
+  // ============ GOOGLE ============
+
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
@@ -93,30 +88,32 @@ class AuthRepository {
 
       if (userCredential.user != null) {
         final user = userCredential.user!;
-
-        final userModel = UserModel.fromFirebaseUser(
-          uid: user.uid,
-          displayName: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-          provider: 'google',
-        );
-
         final userDoc = await _firestore
             .collection('users')
             .doc(user.uid)
             .get();
 
         if (userDoc.exists) {
-          await _firestore.collection('users').doc(user.uid).set({
-            ...userModel.toFirestore(),
-            'profileComplete': true,
+          // ✅ Only update auth-related fields — never overwrite
+          // profile completion fields (address, gender, houseName etc.)
+          await _firestore.collection('users').doc(user.uid).update({
+            'name': user.displayName,
+            'email': user.email,
+            'photoUrl': user.photoURL,
             'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          });
         } else {
+          // New user — create document
+          final userModel = UserModel.fromFirebaseUser(
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            provider: 'google',
+          );
           await _firestore.collection('users').doc(user.uid).set({
             ...userModel.toFirestore(),
-            'profileComplete': true,
+            'profileComplete': false,
             'updatedAt': FieldValue.serverTimestamp(),
           });
         }
@@ -130,7 +127,8 @@ class AuthRepository {
     }
   }
 
-  // Send OTP
+  // ============ PHONE OTP ============
+
   Future<void> sendOTP({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
@@ -156,7 +154,6 @@ class AuthRepository {
     }
   }
 
-  // Verify OTP
   Future<UserCredential?> verifyOTP({
     required String verificationId,
     required String otp,
@@ -179,12 +176,10 @@ class AuthRepository {
 
         if (userDoc.exists) {
           final existingUser = UserModel.fromFirestore(userDoc);
-
           final hasPhone =
               existingUser.phone != null && existingUser.phone!.isNotEmpty;
           final hasName =
               existingUser.name != null && existingUser.name!.isNotEmpty;
-
           final userData = userDoc.data() as Map<String, dynamic>;
           final hasGender =
               userData['gender'] != null &&
@@ -204,7 +199,6 @@ class AuthRepository {
             phoneNumber: user.phoneNumber,
             provider: 'phone',
           );
-
           await _firestore.collection('users').doc(user.uid).set({
             ...userModel.toFirestore(),
             'profileComplete': false,
@@ -231,7 +225,8 @@ class AuthRepository {
     }
   }
 
-  // Sign out
+  // ============ SIGN OUT ============
+
   Future<void> signOut() async {
     try {
       await GoogleSignIn.instance.disconnect();
@@ -241,11 +236,11 @@ class AuthRepository {
     await _auth.signOut();
   }
 
-  // Get user data from Firestore
+  // ============ GET USER ============
+
   Future<UserModel?> getUserFromFirestore(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
-
       if (doc.exists && doc.data() != null) {
         return UserModel.fromFirestore(doc);
       }
@@ -256,7 +251,8 @@ class AuthRepository {
     }
   }
 
-  // Handle Firebase Auth exceptions
+  // ============ ERROR HANDLING ============
+
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':

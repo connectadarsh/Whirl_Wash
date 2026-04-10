@@ -1,49 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:whirl_wash/features/home/data/models/cart_entry.dart';
 import 'package:whirl_wash/features/home/data/models/fabric_type.dart';
 import 'package:whirl_wash/features/home/data/repositories/cart_repository.dart';
-
-// =====================================================================
-// CART ENTRY MODEL
-// =====================================================================
-
-class CartEntry {
-  final String itemId;
-  final String serviceId;
-  final int quantity;
-  final FabricType? fabric;
-  final String? customName;
-  final bool isExpress;
-  final String? expressTimeSlot;
-
-  const CartEntry({
-    required this.itemId,
-    required this.serviceId,
-    required this.quantity,
-    this.fabric,
-    this.customName,
-    this.isExpress = false,
-    this.expressTimeSlot,
-  });
-
-  bool get isCustom => customName != null;
-
-  CartEntry copyWith({int? quantity, FabricType? fabric}) {
-    return CartEntry(
-      itemId: itemId,
-      serviceId: serviceId,
-      quantity: quantity ?? this.quantity,
-      fabric: fabric ?? this.fabric,
-      customName: customName,
-      isExpress: isExpress,
-      expressTimeSlot: expressTimeSlot,
-    );
-  }
-
-  @override
-  String toString() =>
-      'CartEntry(itemId: $itemId, serviceId: $serviceId, qty: $quantity)';
-}
 
 // =====================================================================
 // CART NOTIFIER
@@ -52,7 +11,6 @@ class CartEntry {
 class CartNotifier extends Notifier<Map<String, CartEntry>> {
   @override
   Map<String, CartEntry> build() {
-    // Load cart from Firestore on app start
     _loadCart();
     return {};
   }
@@ -66,7 +24,6 @@ class CartNotifier extends Notifier<Map<String, CartEntry>> {
     if (saved.isNotEmpty) state = saved;
   }
 
-  // Called after order placed
   Future<void> clearAndSync() async {
     state = {};
     final uid = _userId;
@@ -74,11 +31,8 @@ class CartNotifier extends Notifier<Map<String, CartEntry>> {
     await CartRepository().clearCart(uid);
   }
 
-  // ── KEY ─────────────────────────────────────────────────────────────
   String _key(String itemId, String serviceId, {bool isExpress = false}) =>
       isExpress ? 'express_${serviceId}_$itemId' : '${serviceId}_$itemId';
-
-  // ── CART OPERATIONS ─────────────────────────────────────────────────
 
   void increment(
     String itemId,
@@ -86,6 +40,7 @@ class CartNotifier extends Notifier<Map<String, CartEntry>> {
     FabricType? fabric,
     bool isExpress = false,
     String? expressTimeSlot,
+    String? imageUrl, // ← NEW
   }) {
     final key = _key(itemId, serviceId, isExpress: isExpress);
     final current = state[key];
@@ -99,6 +54,7 @@ class CartNotifier extends Notifier<Map<String, CartEntry>> {
           fabric: fabric,
           isExpress: isExpress,
           expressTimeSlot: expressTimeSlot,
+          imageUrl: imageUrl, // ← NEW
         ),
       };
     } else {
@@ -152,6 +108,7 @@ class CartNotifier extends Notifier<Map<String, CartEntry>> {
         customName: name.trim(),
         isExpress: isExpress,
         expressTimeSlot: expressTimeSlot,
+        // no imageUrl for custom items
       ),
     };
   }
